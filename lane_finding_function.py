@@ -7,8 +7,9 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from moviepy.editor import VideoFileClip
 
-# the function preparing object points and image point for camera calibration
-def cali_points(input_files):
+# performs the camera calibration, image distortion correction and 
+# save the camera matrix and undistortion coefficients to pickle file
+def cali_undistort(input_files = 'camera_cal/cal*.jpg'):
     objp = np.zeros((6*9,3), np.float32)
     objp[:,:2] = np.mgrid[0:9, 0:6].T.reshape(-1,2)
 
@@ -31,53 +32,31 @@ def cali_points(input_files):
         if ret == True:
             objpoints.append(objp)
             imgpoints.append(corners)
-    return objpoints, imgpoints
-
-#function that takes an image, object points, and image points
-# performs the camera calibration, image distortion correction and 
-# returns the undistorted image
-def cal_undistort(img_name):
-    #call function cali_points to get the object and image points
-    objpoints, imgpoints = cali_points('camera_cal/cal*.jpg')
-    
-    #do the calibration and undistortion
-    img = cv2.imread(img_name)
+    #calculate the camera matrix and undistortion coefficients
     img_size = (img.shape[1], img.shape[0])
     ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, img_size,None,None)
-    undist = cv2.undistort(img, mtx, dist, None, mtx)
     # Save the camera calibration result for later use (we won't worry about rvecs / tvecs)
     dist_pickle = {}
     dist_pickle["mtx"] = mtx
     dist_pickle["dist"] = dist
     pickle.dump( dist_pickle, open( "temp/cal_pickle.p", "wb" ) )
 
-    return undist
+#function that takes an image, undistorted it using the camera matrix and undistortion coeffi.
+def cal_image(img,pickle_cal="temp/cal_pickle.p"):
+    #load the saved camera matrix and distortion coefficients
+    dist_pickle = pickle.load( open( pickle_cal, "rb" ) )
+    mtx = dist_pickle["mtx"]
+    dist = dist_pickle["dist"]
+    #conduct the undistortion
+    undistorted = cv2.undistort(img, mtx, dist, None, mtx)
 
-#function that takes an image, object points, and image points
-# performs the camera calibration, image distortion correction and 
-# returns the undistorted image
-def cal_undistort(img_name):
-    #call function cali_points to get the object and image points
-    objpoints, imgpoints = cali_points('camera_cal/cal*.jpg')
-    
-    #do the calibration and undistortion
-    img = cv2.imread(img_name)
-    img_size = (img.shape[1], img.shape[0])
-    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, img_size,None,None)
-    undist = cv2.undistort(img, mtx, dist, None, mtx)
-    # Save the camera calibration result for later use (we won't worry about rvecs / tvecs)
-    dist_pickle = {}
-    dist_pickle["mtx"] = mtx
-    dist_pickle["dist"] = dist
-    pickle.dump( dist_pickle, open( "temp/cal_pickle.p", "wb" ) )
-
-    return undist
+    return undistorted
 
 #define different methods creating a binary image containing likely lane pixels
 # directional gradient
 def abs_sobel_thresh(img, orient='x', sobel_kernel=3, thresh=(0, 255)):
     # Convert to grayscale
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     # Apply x or y gradient with the OpenCV Sobel() function
     # and take the absolute value
     if orient == 'x':
@@ -96,7 +75,7 @@ def abs_sobel_thresh(img, orient='x', sobel_kernel=3, thresh=(0, 255)):
 # magnitude of the gradient
 def mag_thresh(img, sobel_kernel=3, mag_thresh=(0, 255)):
     # Convert to grayscale
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     # Take both Sobel x and y gradients
     sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=sobel_kernel)
     sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=sobel_kernel)
@@ -114,7 +93,7 @@ def mag_thresh(img, sobel_kernel=3, mag_thresh=(0, 255)):
 # gradient direction
 def dir_threshold(image, sobel_kernel=3, thresh=(0, np.pi/2)):
     # Convert to grayscale
-    gray = cv2.cvtColor(img, cv2.COLOR_BRG2GRAY)
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     # Calculate the x and y gradients
     sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=sobel_kernel)
     sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=sobel_kernel)
@@ -128,7 +107,7 @@ def dir_threshold(image, sobel_kernel=3, thresh=(0, np.pi/2)):
 
 #the S channel 
 def s_channel(img,thresh=(0, 255)):
-    hls = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
+    hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS)
     s_channel = hls[:,:,2]
     s_binary = np.zeros_like(s_channel)
     s_binary[(s_channel >= thresh[0]) & (s_channel <= thresh[1])] = 1
@@ -145,7 +124,7 @@ def image_process(img, s_thresh=(170, 255), sx_thresh=(20, 100)):
     combined_binary[(s_binary == 1) | (sxbinary == 1)] = 1
     return combined_binary
 
-def pers_trans(img):
+def pers_trans(img, reverse = False):
     img_size = (img.shape[1], img.shape[0])
     src = np.float32(
         [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
@@ -157,6 +136,10 @@ def pers_trans(img):
         [(img_size[0] / 4), img_size[1]],
         [(img_size[0] * 3 / 4), img_size[1]],
         [(img_size[0] * 3 / 4), 0]])
+
+    if (reverse):
+        src, dst = dst, src
+
     # Compute and apply perpective transform
     M = cv2.getPerspectiveTransform(src, dst)
     warped = cv2.warpPerspective(img, M, img_size, flags=cv2.INTER_NEAREST)  # keep same size as input image
@@ -167,8 +150,7 @@ def sliding_window_fit(binary_warped):
     # Assuming you have created a warped binary image called "binary_warped"
     # Take a histogram of the bottom half of the image
     histogram = np.sum(binary_warped[binary_warped.shape[0]/2:,:], axis=0)
-    # Create an output image to draw on and  visualize the result
-    out_img = np.dstack((binary_warped, binary_warped, binary_warped))*255
+
     # Find the peak of the left and right halves of the histogram
     # These will be the starting point for the left and right lines
     midpoint = np.int(histogram.shape[0]/2)
@@ -203,9 +185,7 @@ def sliding_window_fit(binary_warped):
         win_xleft_high = leftx_current + margin
         win_xright_low = rightx_current - margin
         win_xright_high = rightx_current + margin
-        # Draw the windows on the visualization image
-        cv2.rectangle(out_img,(win_xleft_low,win_y_low),(win_xleft_high,win_y_high),(0,255,0), 2) 
-        cv2.rectangle(out_img,(win_xright_low,win_y_low),(win_xright_high,win_y_high),(0,255,0), 2) 
+ 
         # Identify the nonzero pixels in x and y within the window
         good_left_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) & (nonzerox >= win_xleft_low) & (nonzerox < win_xleft_high)).nonzero()[0]
         good_right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) & (nonzerox >= win_xright_low) & (nonzerox < win_xright_high)).nonzero()[0]
@@ -227,12 +207,8 @@ def sliding_window_fit(binary_warped):
     lefty = nonzeroy[left_lane_inds] 
     rightx = nonzerox[right_lane_inds]
     righty = nonzeroy[right_lane_inds] 
-
-    # Fit a second order polynomial to each
-    left_fit = np.polyfit(lefty, leftx, 2)
-    right_fit = np.polyfit(righty, rightx, 2)
     
-    return left_lane_inds,right_lane_inds,left_fit, right_fit
+    return leftx,lefty,rightx,righty 
 
 # Assume you now have a new warped binary image 
 # from the next frame of video,now we fit the new frame
@@ -253,4 +229,75 @@ def new_frame_fit(binary_warped,left_fit,right_fit):
     left_fit = np.polyfit(lefty, leftx, 2)
     right_fit = np.polyfit(righty, rightx, 2)
     return left_fit,right_fit
+
+# calculate the curvature, and the offset from lane center
+def curvature_offsets_get(ym_per_pix,xm_per_pix,dst,leftx,lefty,rightx,righty,y_eval,center_x,center_y):
+    # Fit a second order polynomial to each
+    left_fit = np.polyfit(lefty*ym_per_pix, leftx*xm_per_pix, 2)
+    right_fit = np.polyfit(righty*ym_per_pix, rightx*xm_per_pix, 2)
+    #curvature
+    left_curverad = ((1 + (2*left_fit[0]*y_eval + left_fit[1])**2)**1.5) / np.absolute(2*left_fit[0])
+    right_curverad = ((1 + (2*right_fit[0]*y_eval + right_fit[1])**2)**1.5) / np.absolute(2*right_fit[0])
+    #offsets
+    leftx_lane = left_fit[0]*center_y**2 + left_fit[1]*center_y + left_fit[2]
+    rightx_lane = right_fit[0]*center_y**2 + right_fit[1]*center_y + left_fit[2]
+    offsets = leftx_lane + rightx_lane - center_x
+    return left_curverad,right_curverad,offsets
+
+# Evaluates polynomial and finds value at given point
+def get_x_for_line(line_fit, line_y):
+    poly = np.poly1d(line_fit)
+    return poly(line_y)
+
+def lane_drawing(img):
+    #read and undistort the image
+    img = cal_image(img)
+    ##apply threshold to get the binary image
+    binary_img = image_process(img, (170, 255), (20, 100))
+    #apply the perspective transform
+    src,dst,binary_warped = pers_trans(binary_img)
+    leftx,lefty,rightx,righty = sliding_window_fit(binary_warped)
+
+    left_fit = np.polyfit(lefty, leftx, 2)
+    right_fit = np.polyfit(righty, rightx, 2)
+
+    # Define conversions in x and y from pixels space to meters
+    ym_per_pix = 30./(dst[1][1]-dst[0][1]) # meters per pixel in y dimension
+    xm_per_pix = 3.7/(dst[2][0]-dst[1][0]) # meters per pixel in x dimension
+
+    #calculate the curvature and offsets
+    yvalue = img.shape[0]
+    left_curvature,right_curvature,offsets = curvature_offsets_get(ym_per_pix,\
+    xm_per_pix,dst,leftx,lefty,rightx,righty,yvalue,(img.shape[1])/2*xm_per_pix,img.shape[1]*ym_per_pix)
+
+    # Create an image to draw the lines on
+    color_warp = np.zeros_like(img).astype(np.uint8)
+
+    # Recast the x and y points into usable format for cv2.fillPoly()
+    y_vals = np.arange(0, img.shape[0])
+    left_fitx = get_x_for_line(left_fit, y_vals)
+    right_fitx = get_x_for_line(right_fit, y_vals)
+    pts_left = np.array([np.transpose(np.vstack([left_fitx, y_vals]))])
+    pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, y_vals])))])
+    pts = np.hstack((pts_left, pts_right))
+
+    # Draw the lane onto the warped blank image
+    cv2.fillPoly(color_warp, np.int_([pts]), (0, 255, 0))
+    
+    # Warp the blank back to original image space using inverse perspective matrix (Minv)
+    _,_,newwarp = pers_trans(color_warp, reverse = True)
+
+    # Combine the result with the original image
+    result = cv2.addWeighted(img, 1, newwarp, .3, 0)
+
+    #write the curvature and offsets
+    if offsets < 0:
+        cv2.putText(result, 'Vehicle is {:.2f} meters left of center'.format(offsets),(20, 40),
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+    else:
+        cv2.putText(result, 'Vehicle is {:.2f} meters right of center'.format(offsets),(20, 40),
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+    cv2.putText(result, 'Radius of curvature is {} meters'.format(int((left_curvature + right_curvature)/2)),(20, 80),
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+    return result
 
