@@ -9,7 +9,7 @@ from moviepy.editor import VideoFileClip
 
 # performs the camera calibration, image distortion correction and 
 # save the camera matrix and undistortion coefficients to pickle file
-def cali_undistort(input_files = 'camera_cal/cal*.jpg'):
+def undistort_parameters(input_files = 'camera_cal/cal*.jpg'):
     objp = np.zeros((6*9,3), np.float32)
     objp[:,:2] = np.mgrid[0:9, 0:6].T.reshape(-1,2)
 
@@ -42,7 +42,7 @@ def cali_undistort(input_files = 'camera_cal/cal*.jpg'):
     pickle.dump( dist_pickle, open( "temp/cal_pickle.p", "wb" ) )
 
 #function that takes an image, undistorted it using the camera matrix and undistortion coeffi.
-def cal_image(img,pickle_cal="temp/cal_pickle.p"):
+def undistort_image(img,pickle_cal="temp/cal_pickle.p"):
     #load the saved camera matrix and distortion coefficients
     dist_pickle = pickle.load( open( pickle_cal, "rb" ) )
     mtx = dist_pickle["mtx"]
@@ -90,7 +90,7 @@ def mag_thresh(img, sobel_kernel=3, mag_thresh=(0, 255)):
     # Return the binary image
     return binary_output
 
-# gradient direction
+# gradient direction threshold
 def dir_threshold(image, sobel_kernel=3, thresh=(0, np.pi/2)):
     # Convert to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
@@ -105,7 +105,7 @@ def dir_threshold(image, sobel_kernel=3, thresh=(0, np.pi/2)):
     # Return the binary image
     return binary_output
 
-#the S channel 
+#the S channel threshold
 def s_channel(img,thresh=(0, 255)):
     hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS)
     s_channel = hls[:,:,2]
@@ -114,7 +114,7 @@ def s_channel(img,thresh=(0, 255)):
     return s_binary
 
 
-def image_process(img, s_thresh=(170, 255), sx_thresh=(20, 100)):
+def get_binary_img(img, s_thresh=(170, 255), sx_thresh=(20, 100)):
     #the Threshold x gradient
     sxbinary = abs_sobel_thresh(img, orient='x', sobel_kernel=3, thresh=sx_thresh)
     #the S channel threshold
@@ -146,7 +146,7 @@ def pers_trans(img, reverse = False):
     return src,dst,warped
 
 # Implement Sliding Windows and Fit a Polynomial
-def sliding_window_fit(binary_warped):
+def init_lane_locate(binary_warped):
     # Assuming you have created a warped binary image called "binary_warped"
     # Take a histogram of the bottom half of the image
     histogram = np.sum(binary_warped[binary_warped.shape[0]/2:,:], axis=0)
@@ -212,7 +212,7 @@ def sliding_window_fit(binary_warped):
 
 # Assume you now have a new warped binary image 
 # from the next frame of video,now we fit the new frame
-def new_frame_fit(binary_warped,left_fit,right_fit):
+def lane_locate(binary_warped,left_fit,right_fit):
     nonzero = binary_warped.nonzero()
     nonzeroy = np.array(nonzero[0])
     nonzerox = np.array(nonzero[1])
@@ -231,7 +231,17 @@ def new_frame_fit(binary_warped,left_fit,right_fit):
     return left_fit,right_fit
 
 # calculate the curvature, and the offset from lane center
-def curvature_offsets_get(ym_per_pix,xm_per_pix,dst,leftx,lefty,rightx,righty,y_eval,center_x,center_y):
+def curvature_offsets_get(img,dst,leftx,lefty,rightx,righty:
+    # Define conversions in x and y from pixels space to meters
+    ym_per_pix = 30./(dst[1][1]-dst[0][1]) # meters per pixel in y dimension
+    xm_per_pix = 3.7/(dst[2][0]-dst[1][0]) # meters per pixel in x dimension
+
+    #calculate the curvature and offsets
+    y_eval = img.shape[0]
+    center_x = (img.shape[1])/2*xm_per_pix
+    center_y = img.shape[1]*ym_per_pix
+
+    # Create an image to draw the lines on
     # Fit a second order polynomial to each
     left_fit = np.polyfit(lefty*ym_per_pix, leftx*xm_per_pix, 2)
     right_fit = np.polyfit(righty*ym_per_pix, rightx*xm_per_pix, 2)
@@ -251,24 +261,17 @@ def get_x_for_line(line_fit, line_y):
 
 def lane_drawing(img):
     #read and undistort the image
-    img = cal_image(img)
+    img = undistort_image(img)
     ##apply threshold to get the binary image
-    binary_img = image_process(img, (170, 255), (20, 100))
+    binary_img = get_binary_img(img, (170, 255), (20, 100))
     #apply the perspective transform
     src,dst,binary_warped = pers_trans(binary_img)
-    leftx,lefty,rightx,righty = sliding_window_fit(binary_warped)
+    leftx,lefty,rightx,righty = init_lane_locate(binary_warped)
 
     left_fit = np.polyfit(lefty, leftx, 2)
     right_fit = np.polyfit(righty, rightx, 2)
 
-    # Define conversions in x and y from pixels space to meters
-    ym_per_pix = 30./(dst[1][1]-dst[0][1]) # meters per pixel in y dimension
-    xm_per_pix = 3.7/(dst[2][0]-dst[1][0]) # meters per pixel in x dimension
 
-    #calculate the curvature and offsets
-    yvalue = img.shape[0]
-    left_curvature,right_curvature,offsets = curvature_offsets_get(ym_per_pix,\
-    xm_per_pix,dst,leftx,lefty,rightx,righty,yvalue,(img.shape[1])/2*xm_per_pix,img.shape[1]*ym_per_pix)
 
     # Create an image to draw the lines on
     color_warp = np.zeros_like(img).astype(np.uint8)
@@ -289,7 +292,9 @@ def lane_drawing(img):
 
     # Combine the result with the original image
     result = cv2.addWeighted(img, 1, newwarp, .3, 0)
-
+    
+    #calculate the curvature and offsets
+    left_curvature,right_curvature,offsets = curvature_offsets_get(img,dst,leftx,lefty,rightx,righty)
     #write the curvature and offsets
     if offsets < 0:
         cv2.putText(result, 'Vehicle is {:.2f} meters left of center'.format(offsets),(20, 40),
