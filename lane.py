@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from moviepy.editor import VideoFileClip
 
+class Camera:
+    def __init__(self, num_x_points, num_y_points, debug_mode=False):
+
 # performs the camera calibration, image distortion correction and 
 # save the camera matrix and undistortion coefficients to pickle file
 def undistort_parameters(input_files = 'camera_cal/cal*.jpg'):
@@ -41,6 +44,29 @@ def undistort_parameters(input_files = 'camera_cal/cal*.jpg'):
     dist_pickle["dist"] = dist
     pickle.dump( dist_pickle, open( "temp/cal_pickle.p", "wb" ) )
 
+class Line():
+    def __init__(self):
+        # was the line detected in the last iteration?
+        self.detected = False  
+        # x values of the last n fits of the line
+        self.recent_xfitted = [] 
+        #average x values of the fitted line over the last n iterations
+        self.bestx = None     
+        #polynomial coefficients averaged over the last n iterations
+        self.best_fit = None  
+        #polynomial coefficients for the most recent fit
+        self.current_fit = [np.array([False])]  
+        #radius of curvature of the line in some units
+        self.radius_of_curvature = None 
+        #distance in meters of vehicle center from the line
+        self.line_base_pos = None 
+        #difference in fit coefficients between last and new fits
+        self.diffs = np.array([0,0,0], dtype='float') 
+        #x values for detected line pixels
+        self.allx = None  
+        #y values for detected line pixels
+        self.ally = None
+        
 #function that takes an image, undistorted it using the camera matrix and undistortion coeffi.
 def undistort_image(img,pickle_cal="temp/cal_pickle.p"):
     #load the saved camera matrix and distortion coefficients
