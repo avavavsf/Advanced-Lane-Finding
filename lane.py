@@ -9,25 +9,31 @@ from moviepy.editor import VideoFileClip
 
 # define camera related parameters and functions
 class Camera:
-    width = 1280
-    height = 720
-    def __init__(self):
 
+    calibration_images = 'camera_cal/cal*.jpg'
+    calibration_parameters = 'temp/cal_pickle.p'
+    def __init__(self):
+        self.width = 1280
+        self.height = 720
         # Source points coords for perspective xform
         self.src = np.float32(
-            [[(720 / 2) - 55, 1280 / 2 + 100],
-            [((720 / 6) + 40), 1280],
-            [(720 * 5 / 6) + 100, 1280],
-            [(720 / 2 + 70), 1280 / 2 + 100]])
+            [[(self.height / 2) - 55, self.width / 2 + 100],
+            [((self.height / 6) + 40), self.width],
+            [(self.height * 5 / 6) + 100, self.width],
+            [(self.height / 2 + 70), self.width / 2 + 100]])
         # Dest. points coords for perspective xform
         self.dst = np.float32(
-            [[(720 / 4), 0],
-            [(720 / 4), 1280],
-            [(720 * 3 / 4), 1280],
-            [(720 * 3 / 4), 0]])
- 
+            [[(self.height / 4), 0],
+            [(self.height / 4), self.width],
+            [(self.height * 3 / 4), self.width],
+            [(self.height * 3 / 4), 0]])
+         # Perspective Transform matrix
+        self.M = cv2.getPerspectiveTransform(self.src, self.dst)
+        # Inverse Perspective Transform matrix
+        self.Minv = cv2.getPerspectiveTransform(self.dst, self.src)
+    
     # calculate and save the camera matrix and undistortion coefficients to pickle file
-    def undistort_parameters(input_files = 'camera_cal/cal*.jpg'):
+    def undistort_parameters():
         objp = np.zeros((6*9,3), np.float32)
         objp[:,:2] = np.mgrid[0:9, 0:6].T.reshape(-1,2)    
 
@@ -36,7 +42,7 @@ class Camera:
         imgpoints = [] # 2d points in image plane.    
 
         # Make a list of calibration images
-        images = glob.glob(input_files)    
+        images = glob.glob(calibration_images)    
 
         # Step through the list and search for chessboard corners
         for idx, fname in enumerate(images):
@@ -57,14 +63,13 @@ class Camera:
         dist_pickle = {}
         dist_pickle["mtx"] = mtx
         dist_pickle["dist"] = dist
-        pickle.dump( dist_pickle, open( "temp/cal_pickle.p", "wb" ) )    
+        pickle.dump( dist_pickle, open(calibration_parameters, "wb" ) )    
     
     
-
     #undistorted a image using the camera matrix and undistortion coeffi.
-    def undistort_image(img,pickle_cal="temp/cal_pickle.p"):
+    def undistort_image(img):
         #load the saved camera matrix and distortion coefficients
-        dist_pickle = pickle.load( open( pickle_cal, "rb" ) )
+        dist_pickle = pickle.load( open(calibration_parameters, "rb" ) )
         mtx = dist_pickle["mtx"]
         dist = dist_pickle["dist"]
         #conduct the undistortion
@@ -259,10 +264,10 @@ class Line():
         return left_fit,right_fit    
 
     # calculate the curvature, and the offset from lane center
-    def get_curvature_offsets(img,dst,leftx,lefty,rightx,righty):
+    def get_curvature_offsets(img,leftx,lefty,rightx,righty):
         # Define conversions in x and y from pixels space to meters
-        ym_per_pix = 30./(dst[1][1]-dst[0][1]) # meters per pixel in y dimension
-        xm_per_pix = 3.7/(dst[2][0]-dst[1][0]) # meters per pixel in x dimension    
+        ym_per_pix = 30./(self.dst[1][1]-self.dst[0][1]) # meters per pixel in y dimension
+        xm_per_pix = 3.7/(self.dst[2][0]-self.dst[1][0]) # meters per pixel in x dimension    
 
         #calculate the curvature and offsets
         y_eval = img.shape[0]
@@ -306,7 +311,7 @@ class Line():
         ##apply threshold to get the binary image
         binary_img = get_binary_img(img, (170, 255), (20, 100))
         #apply the perspective transform
-        src,dst,binary_warped = pers_trans(binary_img)
+        binary_warped = pers_trans(binary_img)
         leftx,lefty,rightx,righty = init_lane_locate(binary_warped)    
 
         #lane fitting
@@ -321,7 +326,7 @@ class Line():
         result = cv2.addWeighted(img, 1, newwarp, .3, 0)
         
         #calculate the curvature and offsets
-        left_curvature,right_curvature,offsets = get_curvature_offsets(img,dst,leftx,lefty,rightx,righty)
+        left_curvature,right_curvature,offsets = get_curvature_offsets(img,leftx,lefty,rightx,righty)
         #write the curvature and offsets
         if offsets < 0:
             cv2.putText(result, 'Vehicle is {:.2f} meters left of center'.format(offsets),(20, 40),
