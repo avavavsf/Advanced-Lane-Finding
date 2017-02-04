@@ -8,7 +8,7 @@ import matplotlib.patches as patches
 from moviepy.editor import VideoFileClip
 
 # define camera related parameters and functions
-class Camera:
+class Camera():
 
     calibration_images = 'camera_cal/cal*.jpg'
     calibration_parameters = 'temp/cal_pickle.p'
