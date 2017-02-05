@@ -157,6 +157,11 @@ class Camera():
 
 class Line():
     def __init__(self):
+        self.dst = np.float32(
+            [[(self.height / 4), 0],
+            [(self.height / 4), self.width],
+            [(self.height * 3 / 4), self.width],
+            [(self.height * 3 / 4), 0]])
         # was the line detected in the last iteration?
         self.detected = False  
         # x values of the last n fits of the line
