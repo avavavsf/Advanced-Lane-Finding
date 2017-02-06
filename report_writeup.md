@@ -19,7 +19,7 @@ The goals / steps of this project are the following:
 [//]: # (Image References)
 
 [image1]: ./output_images/cheeseboard.png "Undistorted"
-[image2]: ./output_images/distortion_corrected "Road Transformed"
+[image2]: ./output_images/distortion_corrected.png "Road Transformed"
 [image3]: ./output_images/binary_image.png "Binary Example"
 [image4]: ./output_images/perspective_transform.png "Warp Example"
 [image5]: ./output_images/slid_win_fit.png "Fit Visual"
