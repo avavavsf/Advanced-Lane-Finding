@@ -99,15 +99,15 @@ Here I also give a example of the perspective tranform applie on the binary thre
 
 ####4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
-The code used to identify and fit the lane is the function `init_lane_locate` on line 203, the function `lane_locate` on line 262 and function `lane_fit` on line 280 in `lane.py` file.
+The code used to identify and fit the lane is the function `init_lane_locate` on line 203, the function `lane_locate` on line 262 and function `lane_fit` on line 280 in `lane.py` file. Here I breifly describe the stepes:
 
-To identify the first frame, or for cases where we lanes are ‘lost’ (i.e. we have not been able to reliably detect a ‘good’ lane for a number of frames), I generate a histogram of the bottom half of the image. Then using the two peaks in this histogram, I determine a good starting point to start searching for image pixels at the bottom of the image. 
+- Firstly, to identify the first frame, or for cases where we lanes are ‘lost’ (i.e. we have not been able to reliably detect a ‘good’ lane for a number of frames), I generate a histogram of the bottom half of the image. Then using the two peaks in this histogram, I determine a good starting point to start searching for image pixels at the bottom of the image. 
 
-Once these points are calculated, I divide the image into 9 horizontal strips of equal size. For the bottom strip, I mask out everything outside of a small window in order to extract the pixels that belong to the lane, effectively discarded all other ‘noise’ pixels.
+- Once these points are calculated, I divide the image into 9 horizontal strips of equal size. For the bottom strip, I mask out everything outside of a small window in order to extract the pixels that belong to the lane, effectively discarded all other ‘noise’ pixels.
 
-I repeat this process for each strip, using histograms on the strips to determine good lane pixes, and then the coordinates of the left and right lane. Once I have processed all strips, I then am left with images for both the left and right lanes. 
+- I repeat this process for each strip, using histograms on the strips to determine good lane pixes, and then the coordinates of the left and right lane. Once I have processed all strips, I then am left with images for both the left and right lanes. 
 
-For all other frames, I use the polynomial lane equation for the previous frame (caluculated in the stage below) to estimate the x coordinates of the left and right lane. This avoids the expensive computation and speeds the process a lots, because we take advantage of the previous information of the lane location.
+- For all other frames, I use the polynomial lane equation for the previous frame (caluculated in the stage below) to estimate the x coordinates of the left and right lane. This avoids the expensive computation and speeds the process a lots, because we take advantage of the previous information of the lane location.
 
 Once we get the coordinates of the lane pixes, we can fit a line with `np.polyfit` function. Then I do two checks to determine if the calculated lane if ‘good’ or not. 
 
@@ -126,9 +126,9 @@ Here’s what the fitted lanes image looks like:
 
 The code used to calculate the radius of the curvature and offsets of the vechile with respecitive to the lane center is the function `get_curvature_offsets` on line 170 throgh 200 in `lane.py` file.
 
-To calculate the curvature of the lane, we have to fit the line in the real world space by conveting the pixes coordinates to distance in meters. After fitting a line, it is pretty easy to calculate the radius of the curvature.
+- To calculate the curvature of the lane, we have to fit the line in the real world space by conveting the pixes coordinates to distance in meters. After fitting a line, it is pretty easy to calculate the radius of the curvature.
 
-To calculate the offsets of the vehicle with repective to the lane center, we suppose the camera is located in the middle bottom of the image. We can also caiculate the x coordinates of the lane centers by take the average of the bottom x coordinates of the left and right lanes, which is easily to obtain by putting the maximum y coorinates to the fitted polynomial line of both lanes. By comparing the average x coordinates of the lane center with the camera location, we can get the offsets in pixes space, and then convet it to real world space by meters per pixel in x dimension.
+- To calculate the offsets of the vehicle with repective to the lane center, we suppose the camera is located in the middle bottom of the image. We can also caiculate the x coordinates of the lane centers by take the average of the bottom x coordinates of the left and right lanes, which is easily to obtain by putting the maximum y coorinates to the fitted polynomial line of both lanes. By comparing the average x coordinates of the lane center with the camera location, we can get the offsets in pixes space, and then convet it to real world space by meters per pixel in x dimension.
 
 ####6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
