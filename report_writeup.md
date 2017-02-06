@@ -23,11 +23,7 @@
 
 ---
 
-###Here I will describe how I addressed each [Rubric point](https://review.udacity.com/#!/rubrics/571/view) in my implementation.  
-
-####1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  
-
-You're reading it!
+##Here I will describe how I addressed each [Rubric point](https://review.udacity.com/#!/rubrics/571/view) in my implementation.  
 
 ---
 
