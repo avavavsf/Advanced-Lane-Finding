@@ -35,9 +35,9 @@ You're reading it!
 
 ####1. Briefly state how you computed the camera matrix and distortion coefficients. Provide an example of a distortion corrected calibration image.
 
-I start by preparing "object points", which will be the (x, y, z) coordinates of the chessboard corners in the world. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.  I use OpenCV 'cv2.findChessboardCorners' function to find the "imgpoints". 
+I start by preparing `object points`, which will be the (x, y, z) coordinates of the chessboard corners in the world. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.  I use OpenCV `cv2.findChessboardCorners` function to find the `imgpoints`. 
 
-once the  `objpoints` and `imgpoints` are ready, I use OpenCV 'cv2.calibrateCamera' to compute the camera calibration and distortion coefficients.  We can now apply the camera matrix and distortion coefficients to correct distortion effects on camera input images using the `cv2.undistort()` function and obtained this result: 
+once the  `objpoints` and `imgpoints` are ready, I use OpenCV `cv2.calibrateCamera` to compute the camera calibration and distortion coefficients.  We can now apply the camera matrix and distortion coefficients to correct distortion effects on camera input images using the `cv2.undistort()` function and obtained this result: 
 
 ![alt text][image1]
 
