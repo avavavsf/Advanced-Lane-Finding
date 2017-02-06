@@ -1,7 +1,7 @@
 ## Advanced Lane Finding
 
 
-In this project, the goal is to write a software pipeline to identify the lane boundaries in a video.The fianl output vieo can be found here.</br>
+In this project, the goal is to write a software pipeline to identify the lane boundaries in a video.The fianl output vieo can be found here.For detailed steps and technique use in this projece can be found here in the [project report.](./report_writeup.md)</br>
 [![IMAGE ALT TEXT](http://img.youtube.com/vi/_k94oNCMjl0/0.jpg)](https://youtu.be/_k94oNCMjl0 "a small networkd ")
 
 ---
@@ -16,5 +16,4 @@ The goals / steps of this project are the following:
 * Determine the curvature of the lane and vehicle position with respect to center.
 * Warp the detected lane boundaries back onto the original image.
 * Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
-
-For detailed steps and technique use in this projece can be found here in the [project report.](./report_writeup.md) 
+ 
