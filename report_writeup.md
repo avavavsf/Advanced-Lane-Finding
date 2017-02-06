@@ -28,6 +28,9 @@
 ####1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  
 
 You're reading it!
+
+---
+
 ###Camera Calibration
 
 ####1. Briefly state how you computed the camera matrix and distortion coefficients. Provide an example of a distortion corrected calibration image.
@@ -37,6 +40,8 @@ I start by preparing "object points", which will be the (x, y, z) coordinates of
 once the  `objpoints` and `imgpoints` are ready, I use OpenCV 'cv2.calibrateCamera' to compute the camera calibration and distortion coefficients.  We can now apply the camera matrix and distortion coefficients to correct distortion effects on camera input images using the `cv2.undistort()` function and obtained this result: 
 
 ![alt text][image1]
+
+---
 
 ###Pipeline (single images)
 
