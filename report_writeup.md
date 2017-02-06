@@ -21,8 +21,6 @@
 [image6]: ./output_images/lane_on_image.png "Output"
 [image7]: ./output_images/binary_image_per_trans.png "Output"
 
----
-
 ##Here I will describe how I addressed each [Rubric point](https://review.udacity.com/#!/rubrics/571/view) in my implementation.  
 
 ###Camera Calibration
