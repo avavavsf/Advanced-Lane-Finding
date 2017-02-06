@@ -1,7 +1,7 @@
 ## Advanced Lane Finding
 
 
-In this project, the goal is to write a software pipeline to identify the lane boundaries in a video.The fianl output vieo can be found here.
+In this project, the goal is to write a software pipeline to identify the lane boundaries in a video.The fianl output vieo can be found here.</br>
 [![IMAGE ALT TEXT](http://img.youtube.com/vi/_k94oNCMjl0/0.jpg)](https://youtu.be/_k94oNCMjl0 "a small networkd ")
 
 ---
