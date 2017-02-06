@@ -37,7 +37,7 @@ You're reading it!
 
 I start by preparing `object points`, which will be the (x, y, z) coordinates of the chessboard corners in the world. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.  I use OpenCV `cv2.findChessboardCorners` function to find the `imgpoints`. 
 
-once the  `objpoints` and `imgpoints` are ready, I use OpenCV `cv2.calibrateCamera` to compute the camera calibration and distortion coefficients.  We can now apply the camera matrix and distortion coefficients to correct distortion effects on camera input images using the `cv2.undistort()` function and obtained this result: 
+Once the  `objpoints` and `imgpoints` are ready, I use OpenCV `cv2.calibrateCamera` to compute the camera calibration and distortion coefficients.  We can now apply the camera matrix and distortion coefficients to correct distortion effects on camera input images using the `cv2.undistort()` function and obtained this result: 
 
 ![alt text][image1]
 
@@ -51,8 +51,8 @@ To demonstrate this step, I will describe how I apply the distortion correction 
 
 ####2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
 I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines 143 through 151 in `lane.py` file).  
-For color, I convert the RGB image to the HLS color space, and then use the S channel becasue it is very efficient for picking out lane lines under different color and contrast conditions. The binary image was obtained by setting the S chanel value between 170 and 255 to one and the left to zero.
-For gradient, I convert the  input RGB image to grayscale. I then apply a Sobel filter in the X direction to get image edges that match the direction of the lane lines. The grey scale image then be converted to binary images by setting the scaled abslute gradient between 20 and 100 to one, and the lest to zero.
+- For color, I convert the RGB image to the HLS color space, and then use the S channel becasue it is very efficient for picking out lane lines under different color and contrast conditions. The binary image was obtained by setting the S chanel value between 170 and 255 to one and the left to zero.
+- For gradient, I convert the  input RGB image to grayscale. I then apply a Sobel filter in the X direction to get image edges that match the direction of the lane lines. The grey scale image then be converted to binary images by setting the scaled abslute gradient between 20 and 100 to one, and the lest to zero.
 
 Here's an example of my output combining the above two thresholds.  (note: this is not actually from one of the test images)
 
@@ -63,8 +63,7 @@ Here's an example of my output combining the above two thresholds.  (note: this 
 The code for my perspective transform at lines 154 through 160 in `lane.py` file with a function named `pers_trans`.  
 The `pers_trans` function takes as inputs an image `img`, as well as source `src` and destination `dst` points.  
 
-I apply a perspective transform on the image to generate an image with the effect of looking down on the road from above. I have defined a preset coordinate list, i.e., the source `src` and destination `dst` points, to use for the perspective transformation,
-and then use OpenCV `cv2.getPerspectiveTransform()` function generates a perspective transform matrix.
+I apply a perspective transform on the image to generate an image with the effect of looking down on the road from above. I have defined a preset coordinate list, i.e., the source `src` and destination `dst` points, to use for the perspective transformation, and then use OpenCV `cv2.getPerspectiveTransform()` function generates a perspective transform matrix.
 
 ```
         # Source points coords for perspective xform
