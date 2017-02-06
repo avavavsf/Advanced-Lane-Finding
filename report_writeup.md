@@ -1,8 +1,5 @@
 ##Advanced lane finding report
 
-
----
-
 **The goals / steps of this project are the following:**
 
 * Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
@@ -108,10 +105,13 @@ I repeat this process for each strip, using histograms on the strips to determin
 
 For all other frames, I use the polynomial lane equation for the previous frame (caluculated in the stage below) to estimate the x coordinates of the left and right lane. This avoids the expensive computation and speeds the process a lots, because we take advantage of the previous information of the lane location.
 
-Once we get the coordinates of the lane pixes, we can fit a line with `np.polyfit` function. 
+Once we get the coordinates of the lane pixes, we can fit a line with `np.polyfit` function. Then I do two checks to determine if the calculated lane if ‘good’ or not. 
 
+- First I check to see that the Radius of Curvature of the lane is above a minimum threshold of 587 meters, which is from the U.S. government specifications for highway curvature.
 
+- The second check I do is to see that the x coordinates of the left and right lanes. It should not change too much from one frame to anoter condiersing that there is 25 frames per second.I found that checking for a 15 pixel delta worked well for this check.
 
+- If any of the above two checks fail for a lane or two, I consider the lane ‘lost’ or undetected for that frame, and I use the average values from the previous n frame.  If a lane has not been successfully detected for 5 successive frames, then I trigger a full scan for detecting the lanes in the Locate Lanes section. I always mantian a best fit by averaing 5 'good' fit (including current one, if detected 'good') and use it for current lane drawing.
 
 Here’s what the fitted lanes image looks like:
 
@@ -149,5 +149,5 @@ Here's a Youtube link to my fianl prejection video solution.
 
 ####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+The above pipline works well on the project video, but not on the challenge video because of the severe lighting condition change, and road color and texture change. I would need to do more work on the Binary Thresholding stage to help with light variances and high contrast patterns in the road surfaces; and condiser and implement more checks for the fitted lanes, etc.  
 
