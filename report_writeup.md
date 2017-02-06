@@ -25,8 +25,6 @@
 
 ##Here I will describe how I addressed each [Rubric point](https://review.udacity.com/#!/rubrics/571/view) in my implementation.  
 
----
-
 ###Camera Calibration
 
 ####1. Briefly state how you computed the camera matrix and distortion coefficients. Provide an example of a distortion corrected calibration image.
